@@ -30,14 +30,7 @@ def d100_to_int(n):
 
 
 def probability_to_count(p):
-    bounds = None
-
-    if DASH in p:
-        bounds = [d100_to_int(c) for c in p.split(DASH)]
-    else:
-        bounds = [d100_to_int(p)] * 2
-
-    return bounds[1] - bounds[0] + 1
+    return d100_to_int(p[-2:]) - d100_to_int(p[0:2]) + 1 if DASH in p else 1
 
 
 def ingest_data():
@@ -85,6 +78,8 @@ def main():
 
     while True:
         print("Choose a terrain: ")
+        for terrain in Terrain:
+            print(f"{terrain.name}: {terrain.value}")
         terrain = int(input())
         r = randrange(100)
         print(f"You rolled: {r+1}")
