@@ -2,6 +2,16 @@ import pprint
 from bs4 import BeautifulSoup
 from enum import IntEnum
 from random import randrange
+from PyQt5.QtWidgets import (
+    QApplication,
+    QWidget,
+    QPushButton,
+    QVBoxLayout,
+    QTextEdit,
+    QLabel,
+)
+
+# from PyQt5.QtGui import QTextDocument
 
 DASH = "\u2013"
 SOURCE_FILE = "data/source.html"
@@ -74,16 +84,36 @@ def ingest_data():
 
 def main():
     encounter_tables = ingest_data()
-    pp = pprint.PrettyPrinter()
 
-    while True:
-        print("Choose a terrain: ")
-        for terrain in Terrain:
-            print(f"{terrain.name}: {terrain.value}")
-        terrain = int(input())
-        r = randrange(100)
-        print(f"You rolled: {r+1}")
-        print(f"Encounter: {encounter_tables[terrain][r]}")
+    app = QApplication([])
+
+    layout = QVBoxLayout()
+
+    morning_text = QTextEdit()
+    morning_text.setReadOnly(True)
+    afternoon_text = QTextEdit()
+    afternoon_text.setReadOnly(True)
+    evening_text = QTextEdit()
+    evening_text.setReadOnly(True)
+
+    button = QPushButton("Generate Encounters")
+    button.clicked.connect(
+        lambda: morning_text.setText(encounter_tables[Terrain.BEACH][randrange(100)])
+    )
+
+    layout.addWidget(button)
+    layout.addWidget(QLabel("Morning"))
+    layout.addWidget(morning_text)
+    layout.addWidget(QLabel("Afternoon"))
+    layout.addWidget(afternoon_text)
+    layout.addWidget(QLabel("Evening"))
+    layout.addWidget(evening_text)
+
+    window = QWidget()
+    window.setLayout(layout)
+    window.show()
+
+    app.exec_()
 
 
 if __name__ == "__main__":
