@@ -1,4 +1,5 @@
 *.iml
+*.egg-info
 .idea
 .venv
 __pycache__
