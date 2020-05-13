@@ -6,15 +6,24 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QTextEdit,
     QLabel,
+    QHBoxLayout,
+    QGroupBox,
+    QRadioButton,
 )
 
-from model import Model, EncounterTime
+from model import Model, EncounterTime, EncounterFrequency
 
 
 class QEncounterDisplay(QTextEdit):
     def __init__(self):
         super().__init__()
         self.setReadOnly(True)
+
+
+class QEncounterFrequency(QRadioButton):
+    def __init__(self, frequency):
+        super().__init__(frequency.name.title())
+        self.frequency = frequency
 
 
 class MainWindow(QMainWindow):
@@ -26,25 +35,44 @@ class MainWindow(QMainWindow):
         self.main_widget = QWidget()
         self.main_layout = QVBoxLayout()
 
+        self.interface_layout = QHBoxLayout()
+        self.interface_layout.addWidget(self.get_generate_encounter_button())
+        self.interface_layout.addWidget(self.get_encounter_frequency_selectors())
+
         self.encounter_displays = {
             EncounterTime.MORNING: QEncounterDisplay(),
             EncounterTime.AFTERNOON: QEncounterDisplay(),
             EncounterTime.EVENING: QEncounterDisplay(),
         }
 
-        self.add_generate_encounter_button()
+        self.main_layout.addLayout(self.interface_layout)
         self.add_encounter_text_layout()
         self.setup_window()
 
-    def add_generate_encounter_button(self):
-        def x():
+    def get_encounter_frequency_selectors(self):
+        def on_click(button_frequency):
+            self.model.encounter_frequency = button_frequency
+
+        group = QGroupBox("Encounter Frequency")
+        layout = QVBoxLayout()
+        for frequency in EncounterFrequency:
+            button = QEncounterFrequency(frequency)
+            button.toggled.connect(lambda: on_click(button.frequency))
+            if button.frequency == self.model.encounter_frequency:
+                button.setChecked(True)
+            layout.addWidget(button)
+        group.setLayout(layout)
+        return group
+
+    def get_generate_encounter_button(self):
+        def on_click():
             self.model.generate_encounters()
             for time in self.encounter_displays:
                 self.encounter_displays[time].setText(self.model.encounters[time])
 
         button = QPushButton("Generate Encounters")
-        button.clicked.connect(x)
-        self.main_layout.addWidget(button)
+        button.clicked.connect(on_click)
+        return button
 
     def add_encounter_text_layout(self):
         layout = QVBoxLayout()
