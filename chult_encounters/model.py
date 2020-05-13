@@ -99,7 +99,12 @@ class Model:
             key = row[0]
             tag_id = key.strip("#")
             if header := soup.find("h4", id=tag_id):
-                self.encounter_data[key] = str(header) + str(header.find_next_sibling("p"))
+                siblings = []
+                next_sibling = header.find_next_sibling("p")
+                while next_sibling.name != "h4":
+                    siblings.append(str(next_sibling))
+                    next_sibling = next_sibling.next_sibling
+                self.encounter_data[key] = str(header) + "".join(siblings)
             else:
                 self.encounter_data[key] = str(soup.find("p", id=tag_id))
 
