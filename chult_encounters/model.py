@@ -3,6 +3,11 @@ from enum import IntEnum
 from random import Random
 
 
+DASH = "\u2013"
+SOURCE_FILE = "data/source.html"
+ENCOUNTERS_PAGE = "https://www.dndbeyond.com/sources/toa/random-encounters"
+
+
 class Terrain(IntEnum):
     BEACH = 1
     JUNGLE_NO_UNDEAD = 2
@@ -32,12 +37,14 @@ class Model:
         self.random = random
         self.encounter_frequency = EncounterFrequency.STANDARD
         self.terrain = Terrain.JUNGLE_NO_UNDEAD
-        self.encounter_tables = ingest_data()
+        self.encounter_data = {}
+        self.encounter_lookup_tables = {}
         self.encounters = {
             EncounterTime.MORNING: "",
             EncounterTime.AFTERNOON: "",
             EncounterTime.EVENING: "",
         }
+        self.ingest_data()
 
     def encounter_occurs(self):
         roll = self.random.randrange(20) + 1
@@ -45,64 +52,70 @@ class Model:
 
     def get_encounter(self):
         roll = self.random.randrange(100)
-        return self.encounter_tables[self.terrain][roll]
+        encounter_table = self.encounter_lookup_tables[self.terrain]
+        encounter_key = encounter_table[roll]
+        return self.encounter_data[encounter_key]
 
     def generate_encounters(self):
         for time in self.encounters:
             if self.encounter_occurs():
                 self.encounters[time] = self.get_encounter()
             else:
-                self.encounters[time] = "No encounter."
+                self.encounters[time] = "No encounter"
 
+    def ingest_data(self):
+        class Encounter:
+            def __init__(self, name, probability):
+                self.name = name
+                self.probability = probability
 
-def ingest_data():
-    DASH = "\u2013"
-    SOURCE_FILE = "data/source.html"
+        def d100_to_int(n):
+            return 100 if n == "00" else int(n)
 
-    class Encounter:
-        def __init__(self, name, probability):
-            self.name = name
-            self.probability = probability
+        def probability_to_count(p):
+            return d100_to_int(p[-2:]) - d100_to_int(p[0:2]) + 1 if DASH in p else 1
 
-    def d100_to_int(n):
-        return 100 if n == "00" else int(n)
+        def cell_contents(cell):
+            if link_tag := cell.find("a"):
+                return link_tag
+            else:
+                return cell.text
 
-    def probability_to_count(p):
-        return d100_to_int(p[-2:]) - d100_to_int(p[0:2]) + 1 if DASH in p else 1
+        with open(SOURCE_FILE) as f:
+            html = f.read()
 
-    with open(SOURCE_FILE) as f:
-        html = f.read()
+        soup = BeautifulSoup(html, "html.parser")
+        tables = soup.find_all("table")
 
-    soup = BeautifulSoup(html, "html.parser")
-    tables = soup.find_all("table")
-
-    # The HTML source splits the encounter table into two, mimicking how it was printed in the hardcover.
-    # Here we consolidate into a single logical table, by splitting off the header rows from each table
-    # and merging the remaining rows.
-    raw_encounter_table = [
-        [cell.text for cell in row.find_all("td")]
-        for i in (1, 2)
-        for row in tables[i].find_all("tr")[2:]
-    ]
-
-    # Build a dictionary mapping terrains to the encounter table for that terrain
-    encounter_tables = {}
-
-    for terrain in Terrain:
-        # Grab a column of encounters, filtering for only those encounters that can occur in that column's terrain.
-        column = [
-            Encounter(row[0], row[terrain])
-            for row in raw_encounter_table
-            if any(c.isdigit() for c in row[terrain])
+        # The HTML source splits the encounter table into two, mimicking how it was printed in the hardcover.
+        # Here we consolidate into a single logical table, by splitting off the header rows from each table
+        # and merging the remaining rows.
+        raw_encounter_table = [
+            [cell_contents(cell) for cell in row.find_all("td")]
+            for i in (1, 2)
+            for row in tables[i].find_all("tr")[2:]
         ]
 
-        # Build the encounter list for the terrain, weighting instances of each encounter by its probability
-        encounter_table = []
-        for encounter in column:
-            encounter_table += [encounter.name] * probability_to_count(
-                encounter.probability
-            )
+        for row in raw_encounter_table:
+            link = row[0]
+            self.encounter_data[
+                link.get("title")
+            ] = f"<a href={ENCOUNTERS_PAGE}{link.get('href')}>{link.get('title')}</a>"
 
-        encounter_tables[terrain] = encounter_table
+        # Build a dictionary mapping terrains to the encounter table for that terrain
+        for terrain in Terrain:
+            # Grab a column of encounters, filtering for only those encounters that can occur in that column's terrain.
+            column = [
+                Encounter(row[0].get("title"), row[terrain])
+                for row in raw_encounter_table
+                if any(c.isdigit() for c in row[terrain])
+            ]
 
-    return encounter_tables
+            # Build the encounter list for the terrain, weighting instances of each encounter by its probability
+            encounter_table = []
+            for encounter in column:
+                encounter_table += [encounter.name] * probability_to_count(
+                    encounter.probability
+                )
+
+            self.encounter_lookup_tables[terrain] = encounter_table

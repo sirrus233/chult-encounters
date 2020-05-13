@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (
     QWidget,
     QPushButton,
     QVBoxLayout,
-    QTextEdit,
+    QTextBrowser,
     QLabel,
     QHBoxLayout,
     QGroupBox,
@@ -14,10 +14,10 @@ from PyQt5.QtWidgets import (
 from model import Model, EncounterTime, EncounterFrequency
 
 
-class QEncounterDisplay(QTextEdit):
+class QEncounterDisplay(QTextBrowser):
     def __init__(self):
         super().__init__()
-        self.setReadOnly(True)
+        self.setOpenExternalLinks(True)
 
 
 class QEncounterFrequency(QRadioButton):
@@ -68,7 +68,7 @@ class MainWindow(QMainWindow):
         def on_click():
             self.model.generate_encounters()
             for time in self.encounter_displays:
-                self.encounter_displays[time].setText(self.model.encounters[time])
+                self.encounter_displays[time].setHtml(self.model.encounters[time])
 
         button = QPushButton("Generate Encounters")
         button.clicked.connect(on_click)
