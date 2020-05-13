@@ -5,7 +5,6 @@ from random import Random
 
 DASH = "\u2013"
 SOURCE_FILE = "data/source.html"
-ENCOUNTERS_PAGE = "https://www.dndbeyond.com/sources/toa/random-encounters"
 
 
 class Terrain(IntEnum):
@@ -76,8 +75,8 @@ class Model:
             return d100_to_int(p[-2:]) - d100_to_int(p[0:2]) + 1 if DASH in p else 1
 
         def cell_contents(cell):
-            if link_tag := cell.find("a"):
-                return link_tag
+            if link := cell.find("a"):
+                return link.get("href")
             else:
                 return cell.text
 
@@ -97,16 +96,18 @@ class Model:
         ]
 
         for row in raw_encounter_table:
-            link = row[0]
-            self.encounter_data[
-                link.get("title")
-            ] = f"<a href={ENCOUNTERS_PAGE}{link.get('href')}>{link.get('title')}</a>"
+            key = row[0]
+            tag_id = key.strip("#")
+            if header := soup.find("h4", id=tag_id):
+                self.encounter_data[key] = str(header) + str(header.find_next_sibling("p"))
+            else:
+                self.encounter_data[key] = str(soup.find("p", id=tag_id))
 
         # Build a dictionary mapping terrains to the encounter table for that terrain
         for terrain in Terrain:
             # Grab a column of encounters, filtering for only those encounters that can occur in that column's terrain.
             column = [
-                Encounter(row[0].get("title"), row[terrain])
+                Encounter(row[0], row[terrain])
                 for row in raw_encounter_table
                 if any(c.isdigit() for c in row[terrain])
             ]

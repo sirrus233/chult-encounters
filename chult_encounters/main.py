@@ -1,3 +1,4 @@
+from PyQt5.QtCore import QUrl
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -17,6 +18,7 @@ from model import Model, EncounterTime, EncounterFrequency
 class QEncounterDisplay(QTextBrowser):
     def __init__(self):
         super().__init__()
+        self.setSource(QUrl("https://www.dndbeyond.com/sources/toa/random-encounters"))
         self.setOpenExternalLinks(True)
 
 
@@ -50,14 +52,16 @@ class MainWindow(QMainWindow):
         self.setup_window()
 
     def get_encounter_frequency_selectors(self):
-        def on_click(button_frequency):
-            self.model.encounter_frequency = button_frequency
+        def get_on_click(button_frequency):
+            def on_click():
+                self.model.encounter_frequency = button_frequency
+            return on_click
 
         group = QGroupBox("Encounter Frequency")
         layout = QVBoxLayout()
         for frequency in EncounterFrequency:
             button = QEncounterFrequency(frequency)
-            button.toggled.connect(lambda: on_click(button.frequency))
+            button.toggled.connect(get_on_click(button.frequency))
             if button.frequency == self.model.encounter_frequency:
                 button.setChecked(True)
             layout.addWidget(button)
