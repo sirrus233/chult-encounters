@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import (
     QRadioButton,
 )
 
-from model import Model, EncounterTime, EncounterFrequency
+from .model import Model, EncounterTime, EncounterFrequency
 
 
 class QEncounterDisplay(QTextBrowser):
@@ -92,7 +92,11 @@ class MainWindow(QMainWindow):
         self.show()
 
 
-if __name__ == "__main__":
+def main():
     app = QApplication([])
     window = MainWindow()
     app.exec_()
+
+
+if __name__ == "__main__":
+    main()

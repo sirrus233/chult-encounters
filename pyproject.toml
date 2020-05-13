@@ -12,6 +12,9 @@ PyQt5 = "^5.14.2"
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
 
+[tool.poetry.scripts]
+chult_encounters = "chult_encounters.main:main"
+
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
