@@ -35,7 +35,7 @@ class Model:
     def __init__(self, random=Random()):
         self.random = random
         self.encounter_frequency = EncounterFrequency.STANDARD
-        self.terrain = Terrain.JUNGLE_NO_UNDEAD
+        self.terrain = Terrain.BEACH
         self.encounter_data = {}
         self.encounter_lookup_tables = {}
         self.encounters = {

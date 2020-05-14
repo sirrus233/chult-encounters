@@ -9,10 +9,10 @@ from PyQt5.QtWidgets import (
     QLabel,
     QHBoxLayout,
     QGroupBox,
-    QRadioButton,
+    QRadioButton, QComboBox,
 )
 
-from .model import Model, EncounterTime, EncounterFrequency
+from .model import Model, EncounterTime, EncounterFrequency, Terrain
 
 
 class QEncounterDisplay(QTextBrowser):
@@ -38,8 +38,13 @@ class MainWindow(QMainWindow):
         self.main_layout = QVBoxLayout()
 
         self.interface_layout = QHBoxLayout()
-        self.interface_layout.addWidget(self.get_generate_encounter_button())
-        self.interface_layout.addWidget(self.get_encounter_frequency_selectors())
+        self.interface_left = QVBoxLayout()
+        self.interface_right = QVBoxLayout()
+        self.interface_left.addWidget(self.get_generate_encounter_button())
+        self.interface_left.addWidget(self.get_terrain_selector())
+        self.interface_right.addWidget(self.get_encounter_frequency_selectors())
+        self.interface_layout.addLayout(self.interface_left)
+        self.interface_layout.addLayout(self.interface_right)
 
         self.encounter_displays = {
             EncounterTime.MORNING: QEncounterDisplay(),
@@ -50,6 +55,17 @@ class MainWindow(QMainWindow):
         self.main_layout.addLayout(self.interface_layout)
         self.add_encounter_text_layout()
         self.setup_window()
+
+    def get_terrain_selector(self):
+        selector = QComboBox()
+
+        def on_change():
+            self.model.terrain = selector.currentData()
+
+        for terrain in Terrain:
+            selector.addItem(terrain.name.title(), terrain)
+        selector.currentIndexChanged.connect(on_change)
+        return selector
 
     def get_encounter_frequency_selectors(self):
         def get_on_click(button_frequency):
